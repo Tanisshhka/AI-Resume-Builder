@@ -12,8 +12,14 @@ class ApiService {
     return headers;
   }
 
+  private getUrl(endpoint: string): string {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log('[API]', url);
+    return url;
+  }
+
   async get<T = any>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(this.getUrl(endpoint), {
       method: 'GET',
       headers: this.getHeaders(),
     });
@@ -21,7 +27,7 @@ class ApiService {
   }
 
   async post<T = any>(endpoint: string, body?: any): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(this.getUrl(endpoint), {
       method: 'POST',
       headers: this.getHeaders(),
       body: body ? JSON.stringify(body) : undefined,
@@ -30,7 +36,7 @@ class ApiService {
   }
 
   async put<T = any>(endpoint: string, body: any): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(this.getUrl(endpoint), {
       method: 'PUT',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
@@ -39,7 +45,7 @@ class ApiService {
   }
 
   async delete<T = any>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(this.getUrl(endpoint), {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -53,6 +59,7 @@ class ApiService {
         const errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
       } catch (e) {}
+      console.error('[API ERROR]', response.status, errorMessage);
       throw new Error(errorMessage);
     }
     const text = await response.text();
