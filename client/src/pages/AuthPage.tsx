@@ -28,18 +28,30 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
     dispatch(clearAuthError());
 
     try {
+      const url = '/api' + (isLogin ? '/auth/login' : '/auth/register');
+      const payload = isLogin ? { email, password } : { name, email, password };
+      
+      console.log('[AUTH] Calling:', url, payload);
+      
+      let data;
       if (isLogin) {
-        const data = await api.post('/auth/login', { email, password });
-        dispatch(loginSuccess({ user: data, token: data.token }));
+        data = await api.post('/auth/login', { email, password });
+      } else {
+        data = await api.post('/auth/register', { name, email, password });
+      }
+      
+      console.log('[AUTH] Success:', data);
+      dispatch(loginSuccess({ user: data, token: data.token }));
+      
+      if (isLogin) {
         onAuthSuccess();
       } else {
-        const data = await api.post('/auth/register', { name, email, password });
-        dispatch(loginSuccess({ user: data, token: data.token }));
         setSuccessMsg('Account created successfully!');
         setTimeout(() => onAuthSuccess(), 500);
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication failed');
+      console.error('[AUTH] Error:', err.message);
+      setError(err.message || 'Authentication failed. Check console (F12) for details.');
       dispatch(setAuthError(err.message || 'Authentication failed'));
     } finally {
       setLoading(false);
