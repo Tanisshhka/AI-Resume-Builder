@@ -8,9 +8,6 @@ const app = express();
 
 // TRUST PROXY for Vercel
 app.set('trust proxy', 1);
-
-// CORS - allow everything
-app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // ============ MONGODB (cached for serverless warm starts) ============
@@ -266,4 +263,15 @@ app.get('/api/admin/metrics', protect, admin, async (req, res) => { try { await 
 app.get('/api/admin/users', protect, admin, async (req, res) => { try { await connectDB(); const u = await User.find({}).select('-password').sort({ createdAt: -1 }); res.json(u); } catch (e) { res.status(500).json({ message: e.message }); } });
 app.delete('/api/admin/users/:id', protect, admin, async (req, res) => { try { await connectDB(); await User.findByIdAndDelete(req.params.id); await Resume.deleteMany({ userId: req.params.id }); await Job.deleteMany({ userId: req.params.id }); res.json({ message: 'Deleted' }); } catch (e) { res.status(500).json({ message: e.message }); } });
 
-module.exports = app;
+// Vercel Serverless Handler
+module.exports = (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  return app(req, res);
+};
