@@ -1,0 +1,12 @@
+/* App-level styles - ResumeAI Pro */
+/* All styles are handled via Tailwind CSS and index.css */
+/* This file is intentionally minimal */
+
+/* Scrollbar hide utility for step nav */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
