@@ -233,24 +233,24 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-darkbg text-slate-800 dark:text-slate-100 font-sans pt-16 flex flex-col">
       {/* EDITOR HEADER */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/80 px-4 md:px-6 py-3 flex flex-wrap justify-between items-center z-10 gap-3 sticky top-16">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/60 dark:border-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition-colors">
-            <ChevronLeft size={14} /> Dashboard
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/80 px-3 md:px-6 py-2.5 flex flex-wrap justify-between items-center z-10 gap-2 sticky top-16">
+        <div className="flex items-center gap-2 min-w-0">
+          <button onClick={onBack} className="flex items-center gap-1 px-2 py-1.5 rounded-xl border border-slate-200/60 dark:border-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-[10px] md:text-xs font-bold transition-colors flex-shrink-0">
+            <ChevronLeft size={12} /> <span className="hidden sm:inline">Dashboard</span>
           </button>
-          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
-          <input type="text" value={currentResume.title} onChange={(e) => dispatch(updateResumeTitle(e.target.value))} className="bg-transparent font-bold text-sm focus:outline-none border-b border-transparent focus:border-slate-300 py-0.5 w-48" />
-          <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${savingStatus === 'saving' ? 'bg-amber-500/10 text-amber-500 animate-pulse' : savingStatus === 'error' ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+          <div className="h-5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+          <input type="text" value={currentResume.title} onChange={(e) => dispatch(updateResumeTitle(e.target.value))} className="bg-transparent font-bold text-xs md:text-sm focus:outline-none border-b border-transparent focus:border-slate-300 py-0.5 w-28 md:w-48 min-w-0" />
+          <span className={`text-[9px] md:text-[10px] px-1.5 md:px-2 py-0.5 rounded font-bold flex-shrink-0 ${savingStatus === 'saving' ? 'bg-amber-500/10 text-amber-500 animate-pulse' : savingStatus === 'error' ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
             {savingStatus === 'saving' ? 'Saving...' : savingStatus === 'error' ? 'Error' : 'Saved'}
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <select value={currentResume.templateId} onChange={(e) => dispatch(updateTemplateId(e.target.value))} className="px-3 py-1.5 text-[11px] bg-slate-100 dark:bg-slate-800 border border-slate-200/40 dark:border-slate-800/80 rounded-xl focus:outline-none focus:border-primary/50 font-semibold">
+        <div className="flex items-center gap-1.5 md:gap-2">
+          <select value={currentResume.templateId} onChange={(e) => dispatch(updateTemplateId(e.target.value))} className="px-2 md:px-3 py-1.5 text-[10px] md:text-[11px] bg-slate-100 dark:bg-slate-800 border border-slate-200/40 dark:border-slate-800/80 rounded-xl focus:outline-none focus:border-primary/50 font-semibold max-w-[120px] md:max-w-none">
             {templateOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
           </select>
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleExportPdf} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white bg-gradient-to-r from-primary to-secondary text-xs font-bold shadow-md shadow-primary/15 hover:shadow-primary/30 transition-shadow">
-            <Download size={13} /> PDF
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleExportPdf} className="flex items-center gap-1 px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-white bg-gradient-to-r from-primary to-secondary text-[10px] md:text-xs font-bold shadow-md shadow-primary/15 hover:shadow-primary/30 transition-shadow">
+            <Download size={12} /> PDF
           </motion.button>
         </div>
       </div>
@@ -271,10 +271,10 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
       </div>
 
       {/* EDITOR BODY */}
-      <div className="flex-grow grid grid-cols-1 lg:grid-cols-2">
+      <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 min-h-0">
         
         {/* LEFT - WIZARD */}
-        <div className="p-4 md:p-6 border-r border-slate-200/40 dark:border-slate-800/80 overflow-y-auto max-h-[calc(100vh-200px)]">
+        <div className="p-3 md:p-6 border-b lg:border-b-0 lg:border-r border-slate-200/40 dark:border-slate-800/80 overflow-y-auto max-h-[50vh] lg:max-h-[calc(100vh-200px)]">
           
           {/* Step Navigation */}
           <div className="flex items-center gap-1 overflow-x-auto pb-3 mb-4 -mx-1 px-1 scrollbar-hide">
@@ -664,7 +664,7 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
         </div>
 
         {/* RIGHT - PREVIEW */}
-        <div className="bg-slate-200/30 dark:bg-slate-900/30 p-4 md:p-6 flex flex-col items-center overflow-y-auto max-h-[calc(100vh-200px)] select-none">
+        <div className="bg-slate-200/30 dark:bg-slate-900/30 p-3 md:p-6 flex flex-col items-center overflow-y-auto max-h-[50vh] lg:max-h-[calc(100vh-200px)] select-none">
           <div className="w-full max-w-[820px] flex justify-between items-center bg-white/70 dark:bg-slate-900/70 p-2 rounded-xl border border-slate-200/40 dark:border-slate-800/80 mb-3 backdrop-blur-md">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Live Preview</span>
             <div className="flex gap-1.5">

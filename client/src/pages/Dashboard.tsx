@@ -447,7 +447,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onEditResume, onViewShare 
             </motion.button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
             {['bookmarked', 'applied', 'interviewing', 'offered', 'rejected'].map((colKey) => {
               const columnJobs = jobs.filter(j => j.status === colKey);
               const colors: Record<string, string> = {

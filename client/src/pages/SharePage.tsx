@@ -91,7 +91,7 @@ export const SharePage: React.FC<SharePageProps> = ({ shareSlug, onBack }) => {
       {/* BACKGROUND DECORATIONS */}
       <div className="absolute top-0 left-0 w-80 h-80 bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         
         {/* RESUME DISPLAY FRAME */}
         <div className="lg:col-span-2 flex flex-col items-center">
