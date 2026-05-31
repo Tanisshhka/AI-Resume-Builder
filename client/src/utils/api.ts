@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 class ApiService {
   private getHeaders(): HeadersInit {
@@ -52,12 +52,9 @@ class ApiService {
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
-      } catch (e) {
-        // Fallback if not JSON
-      }
+      } catch (e) {}
       throw new Error(errorMessage);
     }
-    
     const text = await response.text();
     return text ? JSON.parse(text) : ({} as T);
   }
