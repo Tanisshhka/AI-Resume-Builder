@@ -8,6 +8,7 @@ const app = express();
 
 // TRUST PROXY for Vercel
 app.set('trust proxy', 1);
+app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // ============ MONGODB (cached for serverless warm starts) ============
@@ -158,7 +159,7 @@ app.put('/api/auth/profile', protect, async (req, res) => {
     if (req.body.email) u.email = req.body.email;
     if (req.body.password) u.password = req.body.password;
     const up = await u.save();
-    res.json({ _id: up._id, name: up.name, email: up.email, role: up.role, token: genToken(up._id) });
+    res.json({ _id: up._id, name: up.name, email: up.email, role: up.role, bio: up.bio, socialLinks: up.socialLinks, token: genToken(up._id) });
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
@@ -191,8 +192,8 @@ app.put('/api/resumes/:id', protect, async (req, res) => {
     const r = await Resume.findById(req.params.id);
     if (!r) return res.status(404).json({ message: 'Not found' });
     if (r.userId.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Not authorized' });
+    if (req.body.saveAsVersion) { r.versions.push({ versionId: Math.random().toString(36).substring(2, 9), comment: req.body.versionComment || 'Save', timestamp: new Date(), data: { title: r.title, templateId: r.templateId, personalInfo: r.personalInfo, education: r.education, experience: r.experience, skills: r.skills, projects: r.projects, certifications: r.certifications, achievements: r.achievements, customSections: r.customSections, resumeScore: r.resumeScore, atsScore: r.atsScore } }); if (r.versions.length > 15) r.versions.shift(); }
     ['title', 'templateId', 'personalInfo', 'education', 'experience', 'skills', 'projects', 'certifications', 'achievements', 'customSections', 'resumeScore', 'atsScore', 'aiSuggestions'].forEach(f => { if (req.body[f] !== undefined) r[f] = req.body[f]; });
-    if (req.body.saveAsVersion) { r.versions.push({ versionId: Math.random().toString(36).substring(2, 9), comment: req.body.versionComment || 'Save', timestamp: new Date(), data: { title: r.title, templateId: r.templateId, personalInfo: r.personalInfo, education: r.education, experience: r.experience, skills: r.skills, projects: r.projects, certifications: r.certifications, achievements: r.achievements, customSections: r.customSections } }); if (r.versions.length > 15) r.versions.shift(); }
     const up = await r.save();
     res.json(up);
   } catch (e) { res.status(500).json({ message: e.message }); }
@@ -223,7 +224,7 @@ app.post('/api/resumes/:id/share', protect, async (req, res) => {
 });
 
 app.get('/api/resumes/share/:slug', async (req, res) => {
-  try { await connectDB(); const r = await Resume.findOne({ shareSlug: req.params.slug, isPublic: true }); if (!r) return res.status(404).json({ message: 'Not found' }); res.json(r); } catch (e) { res.status(500).json({ message: e.message }); }
+  try { await connectDB(); const r = await Resume.findOne({ shareSlug: req.params.slug, isPublic: true }).populate('userId', 'name email bio socialLinks'); if (!r) return res.status(404).json({ message: 'Not found' }); res.json(r); } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
 app.post('/api/resumes/:id/versions/:vid/restore', protect, async (req, res) => {
@@ -234,7 +235,7 @@ app.post('/api/resumes/:id/versions/:vid/restore', protect, async (req, res) => 
     const v = r.versions.find(x => x.versionId === req.params.vid);
     if (!v) return res.status(404).json({ message: 'Version not found' });
     r.versions.push({ versionId: Math.random().toString(36).substring(2, 9), comment: 'Before restore', timestamp: new Date(), data: { title: r.title, templateId: r.templateId, personalInfo: r.personalInfo, education: r.education, experience: r.experience, skills: r.skills, projects: r.projects, certifications: r.certifications, achievements: r.achievements, customSections: r.customSections } });
-    ['title', 'templateId', 'personalInfo', 'education', 'experience', 'skills', 'projects', 'certifications', 'achievements', 'customSections'].forEach(f => { if (v.data[f]) r[f] = v.data[f]; });
+    ['title', 'templateId', 'personalInfo', 'education', 'experience', 'skills', 'projects', 'certifications', 'achievements', 'customSections', 'resumeScore', 'atsScore'].forEach(f => { if (v.data[f] !== undefined) r[f] = v.data[f]; });
     const up = await r.save();
     res.json(up);
   } catch (e) { res.status(500).json({ message: e.message }); }
@@ -254,14 +255,14 @@ app.post('/api/ai/cover-letter', protect, async (req, res) => { try { await conn
 
 // JOBS
 app.get('/api/jobs', protect, async (req, res) => { try { await connectDB(); const j = await Job.find({ userId: req.user._id }).sort({ createdAt: -1 }); res.json(j); } catch (e) { res.status(500).json({ message: e.message }); } });
-app.post('/api/jobs', protect, async (req, res) => { try { await connectDB(); const j = await Job.create({ userId: req.user._id, ...req.body }); res.status(201).json(j); } catch (e) { res.status(500).json({ message: e.message }); } });
-app.put('/api/jobs/:id', protect, async (req, res) => { try { await connectDB(); const j = await Job.findById(req.params.id); if (!j || j.userId.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Not authorized' }); Object.assign(j, req.body); const up = await j.save(); res.json(up); } catch (e) { res.status(500).json({ message: e.message }); } });
+app.post('/api/jobs', protect, async (req, res) => { try { await connectDB(); const { companyName, jobTitle, status, url, notes, appliedDate, salary } = req.body; if (!companyName || !jobTitle) return res.status(400).json({ message: 'Company name and job title are required' }); const j = await Job.create({ userId: req.user._id, companyName, jobTitle, status: status || 'bookmarked', url: url || '', notes: notes || '', appliedDate: appliedDate || null, salary: salary || '' }); res.status(201).json(j); } catch (e) { res.status(500).json({ message: e.message }); } });
+app.put('/api/jobs/:id', protect, async (req, res) => { try { await connectDB(); const j = await Job.findById(req.params.id); if (!j || j.userId.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Not authorized' }); const { companyName, jobTitle, status, url, notes, appliedDate, salary } = req.body; if (companyName !== undefined) j.companyName = companyName; if (jobTitle !== undefined) j.jobTitle = jobTitle; if (status !== undefined) j.status = status; if (url !== undefined) j.url = url; if (notes !== undefined) j.notes = notes; if (appliedDate !== undefined) j.appliedDate = appliedDate; if (salary !== undefined) j.salary = salary; const up = await j.save(); res.json(up); } catch (e) { res.status(500).json({ message: e.message }); } });
 app.delete('/api/jobs/:id', protect, async (req, res) => { try { await connectDB(); const j = await Job.findById(req.params.id); if (!j || j.userId.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Not authorized' }); await j.deleteOne(); res.json({ message: 'Deleted' }); } catch (e) { res.status(500).json({ message: e.message }); } });
 
 // ADMIN
-app.get('/api/admin/metrics', protect, admin, async (req, res) => { try { await connectDB(); const u = await User.countDocuments({}); const r = await Resume.countDocuments({}); const j = await Job.countDocuments({}); res.json({ counts: { users: u, resumes: r, jobs: j, aiRequests: 0 }, recentResumes: [], recentUsers: [] }); } catch (e) { res.status(500).json({ message: e.message }); } });
+app.get('/api/admin/metrics', protect, admin, async (req, res) => { try { await connectDB(); const u = await User.countDocuments({}); const r = await Resume.countDocuments({}); const j = await Job.countDocuments({}); const totalAiTokens = await User.aggregate([{ $group: { _id: null, total: { $sum: '$aiTokensUsed' } } }]); const aiRequests = totalAiTokens.length > 0 ? totalAiTokens[0].total : 0; const recentResumes = await Resume.find({}).select('title templateId resumeScore userId').populate('userId', 'name').sort({ updatedAt: -1 }).limit(5); const recentUsers = await User.find({}).select('name email role createdAt').sort({ createdAt: -1 }).limit(5); res.json({ counts: { users: u, resumes: r, jobs: j, aiRequests }, recentResumes, recentUsers }); } catch (e) { res.status(500).json({ message: e.message }); } });
 app.get('/api/admin/users', protect, admin, async (req, res) => { try { await connectDB(); const u = await User.find({}).select('-password').sort({ createdAt: -1 }); res.json(u); } catch (e) { res.status(500).json({ message: e.message }); } });
-app.delete('/api/admin/users/:id', protect, admin, async (req, res) => { try { await connectDB(); await User.findByIdAndDelete(req.params.id); await Resume.deleteMany({ userId: req.params.id }); await Job.deleteMany({ userId: req.params.id }); res.json({ message: 'Deleted' }); } catch (e) { res.status(500).json({ message: e.message }); } });
+app.delete('/api/admin/users/:id', protect, admin, async (req, res) => { try { await connectDB(); if (req.params.id === req.user._id.toString()) return res.status(400).json({ message: 'Cannot delete your own admin account' }); await User.findByIdAndDelete(req.params.id); await Resume.deleteMany({ userId: req.params.id }); await Job.deleteMany({ userId: req.params.id }); res.json({ message: 'Deleted' }); } catch (e) { res.status(500).json({ message: e.message }); } });
 
 // Vercel Serverless Handler
 module.exports = (req, res) => {

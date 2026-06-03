@@ -18,6 +18,9 @@ connectDB();
 
 const app = express();
 
+// Trust proxy for reverse proxies
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(cors());
 // Allow large payloads (e.g. base64 avatars in resumes)
@@ -55,5 +58,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running in development mode on port ${PORT}`);
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });

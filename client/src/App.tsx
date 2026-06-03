@@ -45,9 +45,11 @@ function AppContent() {
   const handleTabChange = (tabId: string) => {
     if ((tabId === 'dashboard' || tabId === 'editor' || tabId === 'admin') && !user) {
       setCurrentTab('auth');
+    } else if (tabId === 'admin' && user?.role !== 'admin') {
+      setCurrentTab('dashboard');
     } else {
       setCurrentTab(tabId);
-      if (tabId !== 'share') window.history.pushState(null, '', ' ');
+      if (tabId !== 'share') window.history.pushState(null, '', window.location.pathname);
     }
   };
 

@@ -7,7 +7,7 @@ const connectDB = async () => {
   } catch (error) {
     console.error(`MongoDB Connection Error: ${error.message}`);
     console.log('Ensure MongoDB service is running locally on port 27017, or verify your MONGODB_URI in .env');
-    // We won't crash the server immediately, but we will warn the console.
+    process.exit(1);
   }
 };
 

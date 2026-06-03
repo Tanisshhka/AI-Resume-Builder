@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../utils/api';
-import { Shield, Users, FileText, Sparkles, Trash2, Key, ChevronLeft } from 'lucide-react';
+import { Shield, Users, FileText, Sparkles, Trash2, Key, ChevronLeft, Briefcase } from 'lucide-react';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -111,7 +111,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
             <div className="glass-card rounded-2xl p-6">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tracked Jobs</span>
-                <Users className="text-emerald-500 w-4.5 h-4.5" />
+                <Briefcase className="text-emerald-500 w-4.5 h-4.5" />
               </div>
               <div className="text-2xl font-black">{metrics.counts?.jobs || 0}</div>
               <p className="text-[10px] text-slate-500 mt-1">Openings bookmarked/applied</p>

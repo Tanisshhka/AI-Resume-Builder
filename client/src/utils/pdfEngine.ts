@@ -62,9 +62,12 @@ ${htmlContent}
   iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1123px;border:none;opacity:0;pointer-events:none;';
   document.body.appendChild(iframe);
 
+  let iframeRemoved = false;
+
   const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
   if (!iframeDoc) {
     document.body.removeChild(iframe);
+    iframeRemoved = true;
     alert('PDF export failed. Please try again.');
     onProgress?.('error');
     return;
@@ -91,6 +94,7 @@ ${htmlContent}
     });
 
     document.body.removeChild(iframe);
+    iframeRemoved = true;
 
     onProgress?.('generating');
 
@@ -120,7 +124,9 @@ ${htmlContent}
 
   } catch (error) {
     console.error('PDF capture failed:', error);
-    document.body.removeChild(iframe);
+    if (!iframeRemoved && document.body.contains(iframe)) {
+      document.body.removeChild(iframe);
+    }
 
     // Final fallback: browser print dialog
     onProgress?.('error');

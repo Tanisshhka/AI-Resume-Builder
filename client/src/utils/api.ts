@@ -13,9 +13,7 @@ class ApiService {
   }
 
   private getUrl(endpoint: string): string {
-    const url = `${API_BASE_URL}${endpoint}`;
-    console.log('[API]', url);
-    return url;
+    return `${API_BASE_URL}${endpoint}`;
   }
 
   async get<T = any>(endpoint: string): Promise<T> {

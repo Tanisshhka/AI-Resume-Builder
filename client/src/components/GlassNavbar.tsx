@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../store';
 import { toggleTheme } from '../features/uiSlice';
 import { logout } from '../features/authSlice';
-import { Sun, Moon, Menu, X, Sparkles, User, LogOut, ChevronRight } from 'lucide-react';
+import { Sun, Moon, Menu, X, Sparkles, LogOut, ChevronRight } from 'lucide-react';
 
 interface GlassNavbarProps {
   currentTab: string;
@@ -28,14 +28,6 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ currentTab, onTabChang
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
 
   const navItems = [
     { id: 'landing', label: 'Home' },
