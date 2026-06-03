@@ -8,7 +8,6 @@ const app = express();
 
 // TRUST PROXY for Vercel
 app.set('trust proxy', 1);
-app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // ============ MONGODB (cached for serverless warm starts) ============
@@ -20,6 +19,7 @@ async function connectDB() {
   if (!cached.promise) {
     cached.promise = mongoose.connect(process.env.MONGODB_URI, {
       bufferCommands: false,
+      serverSelectionTimeoutMS: 5000,
     });
   }
   cached.conn = await cached.promise;
@@ -265,7 +265,7 @@ app.get('/api/admin/users', protect, admin, async (req, res) => { try { await co
 app.delete('/api/admin/users/:id', protect, admin, async (req, res) => { try { await connectDB(); if (req.params.id === req.user._id.toString()) return res.status(400).json({ message: 'Cannot delete your own admin account' }); await User.findByIdAndDelete(req.params.id); await Resume.deleteMany({ userId: req.params.id }); await Job.deleteMany({ userId: req.params.id }); res.json({ message: 'Deleted' }); } catch (e) { res.status(500).json({ message: e.message }); } });
 
 // Vercel Serverless Handler
-module.exports = (req, res) => {
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
@@ -274,5 +274,10 @@ module.exports = (req, res) => {
     return res.status(200).end();
   }
   
-  return app(req, res);
+  try {
+    return app(req, res);
+  } catch (err) {
+    console.error('Serverless handler error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
 };
