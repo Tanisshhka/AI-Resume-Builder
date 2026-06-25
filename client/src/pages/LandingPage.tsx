@@ -3,8 +3,12 @@ import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'fra
 import { 
   Sparkles, Award, Zap, Shield, ChevronRight, FileText, 
   ArrowRight, Users, CheckCircle, TrendingUp, Check, Brain,
-  Target, Rocket, Star, ChevronDown, Globe, BarChart3, Palette
+  Target, Rocket, Star, ChevronDown, Globe, BarChart3, Palette,
+  Play, X
 } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '../store';
+import { setCurrentResume } from '../features/resumeSlice';
+import { api } from '../utils/api';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -174,6 +178,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onNavigate })
   const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.95]);
   const heroY = useTransform(scrollYProgress, [0, 0.3], [0, -50]);
+
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+
+  const handleAutoGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkedinUrl.trim() && !githubUrl.trim()) {
+      alert('Please enter at least one profile URL (LinkedIn or GitHub)');
+      return;
+    }
+
+    if (!user) {
+      // User not logged in: Save pending data and prompt login/register
+      localStorage.setItem('pending_landing_import', JSON.stringify({
+        linkedinUrl: linkedinUrl.trim(),
+        githubUrl: githubUrl.trim()
+      }));
+      onStart();
+      return;
+    }
+
+    // User logged in: Create empty resume, store pending import config, and redirect to editor
+    setIsGenerating(true);
+    try {
+      const newResume = await api.post('/resumes', { 
+        title: 'AI Imported Resume', 
+        templateId: 'ats-modern' 
+      });
+      dispatch(setCurrentResume(newResume));
+      localStorage.setItem('trigger_editor_import', JSON.stringify({
+        linkedinUrl: linkedinUrl.trim(),
+        githubUrl: githubUrl.trim()
+      }));
+      onNavigate('editor');
+    } catch (err: any) {
+      alert(err.message || 'Failed to initialize AI import');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -377,13 +425,107 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onNavigate })
             </span>
           </button>
           
-          <button 
-            onClick={() => onNavigate('dashboard')}
-            className="magnetic-btn flex items-center justify-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-primary/30 hover:bg-primary/5 dark:hover:bg-primary/5 font-bold text-sm transition-all duration-300"
+          <motion.button
+            onClick={() => setShowVideoModal(true)}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="group magnetic-btn relative flex items-center justify-center gap-3 px-8 py-4 rounded-2xl border-2 border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/60 font-bold text-sm transition-all duration-300 overflow-hidden"
           >
-            <Globe size={16} />
-            Live Demo
-          </button>
+            {/* Pulsing ring */}
+            <span className="relative flex h-5 w-5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-40" />
+              <span className="relative inline-flex rounded-full h-5 w-5 bg-gradient-to-br from-primary to-secondary items-center justify-center">
+                <Play size={10} className="text-white fill-white ml-0.5" />
+              </span>
+            </span>
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent font-extrabold">Watch Live Demo</span>
+          </motion.button>
+        </motion.div>
+
+        {/* Glowing Profile Import Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="mt-14 w-full max-w-2xl relative"
+        >
+          {/* Glowing Aura Background */}
+          <div className="absolute -inset-1.5 rounded-3xl bg-gradient-to-r from-primary via-secondary to-accent opacity-35 blur-xl animate-pulse" />
+          
+          <div className="relative glass-card hover-glow gradient-border rounded-3xl p-6 md:p-8 text-left overflow-hidden bg-white/70 dark:bg-slate-900/50 shadow-2xl border border-slate-200/50 dark:border-slate-800/40">
+            {/* Spotlight Accent */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-accent/10 to-transparent rounded-bl-full pointer-events-none" />
+            
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 relative z-10">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 border border-accent/25 text-accent text-[10px] font-black uppercase tracking-widest mb-3 animate-bounce">
+                  <Sparkles size={10} className="fill-accent text-accent" />
+                  ✨ Instant Import
+                </div>
+                <h3 className="text-xl md:text-2xl font-black bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                  ⚡ AI Profile Auto-Importer
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
+                  Import your LinkedIn profile & GitHub projects to generate a stunning, fully-filled, custom AI resume in seconds.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAutoGenerate} className="space-y-4 relative z-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* LinkedIn URL Input */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-blue-500 fill-current" viewBox="0 0 24 24">
+                      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93zM6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37z"/>
+                    </svg>
+                    LinkedIn Profile URL
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://linkedin.com/in/username"
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    className="w-full px-4 py-3 text-xs bg-white/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-primary/50 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 transition-all duration-300 input-premium"
+                  />
+                </div>
+
+                {/* GitHub URL Input */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-slate-800 dark:text-slate-200 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/>
+                    </svg>
+                    GitHub Profile URL
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://github.com/username"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    className="w-full px-4 py-3 text-xs bg-white/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-primary/50 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 transition-all duration-300 input-premium"
+                  />
+                </div>
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.02, boxShadow: '0 0 25px rgba(108, 99, 255, 0.35)' }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={isGenerating}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-secondary to-accent text-white font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 hover:shadow-primary/30 transition-all duration-300 disabled:opacity-60 cursor-pointer"
+              >
+                {isGenerating ? (
+                  <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                ) : (
+                  <>
+                    <Sparkles size={16} className="fill-white" />
+                    ⚡ Auto-Generate My Resume
+                  </>
+                )}
+              </motion.button>
+            </form>
+          </div>
         </motion.div>
 
         {/* Social Proof */}
@@ -740,6 +882,91 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onNavigate })
           </div>
         </div>
       </footer>
+
+      {/* ============ LOOM VIDEO MODAL ============ */}
+      <AnimatePresence>
+        {showVideoModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-[999] flex items-center justify-center p-4 md:p-8"
+            onClick={() => setShowVideoModal(false)}
+          >
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-xl" />
+
+            {/* Glow ring around modal */}
+            <div className="absolute w-[min(900px,95vw)] aspect-video rounded-3xl bg-gradient-to-r from-primary via-secondary to-accent opacity-40 blur-2xl scale-105 pointer-events-none" />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.88, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.88, y: 30 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-[900px] rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+              style={{ background: 'linear-gradient(135deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98))' }}
+            >
+              {/* Modal top bar */}
+              <div className="flex items-center justify-between px-5 py-3 border-b border-white/8">
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                    </span>
+                    <span className="text-xs font-bold text-slate-300 tracking-wide">LIVE DEMO — ResumeAI Pro</span>
+                  </div>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowVideoModal(false)}
+                  className="p-1.5 rounded-xl bg-white/8 hover:bg-white/15 text-slate-400 hover:text-white transition-colors"
+                >
+                  <X size={16} />
+                </motion.button>
+              </div>
+
+              {/* Loom embed — 16:9 */}
+              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  src="https://www.loom.com/embed/16f6456224c04b0aba584af4ada2c7d5?autoplay=1&hide_owner=true&hide_share=true&hide_title=false&hideEmbedTopBar=false"
+                  frameBorder="0"
+                  allowFullScreen
+                  allow="autoplay; fullscreen"
+                  className="absolute inset-0 w-full h-full"
+                  title="ResumeAI Pro Live Demo"
+                />
+              </div>
+
+              {/* CTA strip below video */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-4 border-t border-white/8">
+                <p className="text-xs text-slate-400 font-medium">
+                  Ready to build your AI resume?
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => { setShowVideoModal(false); onStart(); }}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-extrabold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all"
+                >
+                  <Sparkles size={13} />
+                  Get Started Free
+                  <ArrowRight size={13} />
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

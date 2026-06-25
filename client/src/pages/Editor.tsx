@@ -80,6 +80,21 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
     return () => clearTimeout(delayDebounceFn);
   }, [currentResume]);
 
+  useEffect(() => {
+    const pendingImport = localStorage.getItem('trigger_editor_import');
+    if (pendingImport) {
+      localStorage.removeItem('trigger_editor_import');
+      try {
+        const { linkedinUrl: lUrl, githubUrl: gUrl } = JSON.parse(pendingImport);
+        if (lUrl) setLinkedinUrl(lUrl);
+        if (gUrl) setGithubUrl(gUrl);
+        generateFromProfiles(lUrl, gUrl);
+      } catch (e) {
+        console.error('Error parsing pending import in Editor:', e);
+      }
+    }
+  }, []);
+
   const handlePersonalInfoChange = (field: string, value: string) => {
     dispatch(updatePersonalInfo({ [field]: value }));
   };
@@ -154,11 +169,13 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
     } catch (err: any) { alert(err.message); } finally { setAiLoading(false); }
   };
 
-  const generateFromProfiles = async () => {
-    if (!linkedinUrl && !githubUrl) { alert('Please enter at least one URL (LinkedIn or GitHub)'); return; }
+  const generateFromProfiles = async (lUrl?: string, gUrl?: string) => {
+    const finalLinkedin = lUrl !== undefined ? lUrl : linkedinUrl;
+    const finalGithub = gUrl !== undefined ? gUrl : githubUrl;
+    if (!finalLinkedin && !finalGithub) { alert('Please enter at least one URL (LinkedIn or GitHub)'); return; }
     setProfileLoading(true);
     try {
-      const data = await api.post('/ai/generate-from-profiles', { linkedinUrl, githubUrl });
+      const data = await api.post('/ai/generate-from-profiles', { linkedinUrl: finalLinkedin, githubUrl: finalGithub });
       if (data.personalInfo) dispatch(updatePersonalInfo(data.personalInfo));
       if (data.experience) data.experience.forEach((exp: any) => dispatch(addExperience(exp)));
       if (data.education) data.education.forEach((edu: any) => dispatch(addEducation(edu)));

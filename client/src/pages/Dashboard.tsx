@@ -65,7 +65,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ onEditResume, onViewShare 
     }
   };
 
-  useEffect(() => { fetchDashboardData(); }, []);
+  useEffect(() => { 
+    fetchDashboardData(); 
+    
+    const handlePendingImport = async () => {
+      const pendingImport = localStorage.getItem('pending_landing_import');
+      if (pendingImport) {
+        localStorage.removeItem('pending_landing_import');
+        try {
+          setActionLoading(true);
+          const newResume = await api.post('/resumes', { title: 'AI Imported Resume', templateId: 'ats-modern' });
+          dispatch(setCurrentResume(newResume));
+          localStorage.setItem('trigger_editor_import', pendingImport);
+          onEditResume();
+        } catch (e: any) {
+          console.error('Pending import error:', e.message || e);
+        } finally {
+          setActionLoading(false);
+        }
+      }
+    };
+    
+    handlePendingImport();
+  }, [dispatch, onEditResume]);
 
   const handleCreateResume = async () => {
     setActionLoading(true);
