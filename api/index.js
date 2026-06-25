@@ -118,8 +118,16 @@ const mockAI = (key) => {
 
 // ============ ROUTES ============
 
-// Health
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+// Health — actually queries MongoDB to keep Atlas cluster alive
+app.get('/api/health', async (req, res) => {
+  try {
+    await connectDB();
+    await User.countDocuments();
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+});
 
 // AUTH
 app.post('/api/auth/register', async (req, res) => {
